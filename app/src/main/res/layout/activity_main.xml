@@ -27,32 +27,11 @@
         app:layout_constraintTop_toBottomOf="@+id/btnGenKey" />
 
     <Button
-        android:id="@+id/btnSendMessage"
+        android:id="@+id/btnGenCoinBase"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
-        android:text="@string/send_message"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnGenMessage" />
-
-    <Button
-        android:id="@+id/btnVerifyMessage"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:text="@string/verify_message"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnRetrieveMessage" />
-
-    <Button
-        android:id="@+id/btnGenMessage"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:text="@string/gen_message"
+        android:text="@string/gen_coin_base"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btnGenAddress" />
@@ -65,5 +44,17 @@
         android:text="@string/retrieve_message"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnSendMessage" />
+        app:layout_constraintTop_toBottomOf="@+id/btnGenUTXO" />
+
+    <Button
+        android:id="@+id/btnGenUTXO"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="@string/gen_utxo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.469"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnGenCoinBase" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

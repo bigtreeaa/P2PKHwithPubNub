@@ -2,8 +2,7 @@
     <string name="app_name">P2PKHwithPubNub</string>
     <string name="gen_key">Generate KeyStore &amp; KeyPair</string>
     <string name="gen_address">Generate Address</string>
-    <string name="send_message">Send Message</string>
+    <string name="gen_coin_base">Generate Coin Base</string>
+    <string name="gen_utxo">Generate UTXO</string>
     <string name="retrieve_message">Retrieve Message</string>
-    <string name="verify_message">Verify Message</string>
-    <string name="gen_message">Generate Message</string>
 </resources>
