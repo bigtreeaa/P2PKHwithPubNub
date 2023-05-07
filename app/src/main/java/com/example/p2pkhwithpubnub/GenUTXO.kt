@@ -1,68 +1,23 @@
 package com.example.p2pkhwithpubnub
 
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import org.bitcoinj.core.Sha256Hash
+import kotlin.random.Random
+
 class GenUTXO {
+    @Serializable
+    data class UTXO(val type : String, val txid : String, val input_number : Int, val inputs : List<Input>,
+                    val output_number : Int, val outputs : List<Output>)
+    @Serializable
+    data class Input(val output_txid : String, val output_index : Int, val input_index : Int)
+    @Serializable
+    data class Output(val address : String, val gruut : Int, val script : String, val output_index: Int)
 
-    // data class for information of input and output
-    data class InputData (var output_txid: Int, var output_index : Int, var input_index : Int)
-
-    // pubKeyHash의 데이터 타입은 달라질 수 있음...
-    // 코드 실행해보고 점검할 것
-    data class OutputData (var address: String, var gruut : Int, var output_index : Int, var pubKeyHash: String)
-
-    fun genUTXO(inputDataList: List<InputData>, outputDataList: List<OutputData>) : String {
-        var message = """{"unspent_output" : [
-            |{
-            |   "input_number" : ${inputDataList.size}
-            |   "inputs" : [
-        """.trimMargin()
-
-        for (data in inputDataList){
-            message += inputInfo(data.output_txid, data.output_index, data.input_index)
-            message += """,
-                |
-            """.trimMargin()
-        }
-        message.replace(".$".toRegex(), "")
-
-        message += """
-            |],
-            |"output_number : ${outputDataList.size},
-            |"outputs" : [
-            |
-        """.trimMargin()
-
-        for (data in outputDataList){
-            message += outputInfo(data.address, data.gruut, data.output_index, data.pubKeyHash)
-            message += """,
-                |
-            """.trimMargin()
-        }
-        message.replace(".$".toRegex(), "")
-
-        message += """
-            |]
-            |}
-        """.trimMargin()
-
-        return message
-    }
-
-    private fun inputInfo(outputTxid: Int, outputIndex: Int, inputIndex: Int): Any? {
-        return """"{
-            |output_txid" : $outputTxid,
-            |"output_index" : $outputIndex,
-            |"input_index" : $inputIndex
-            |},
-        """.trimMargin()
-    }
-
-    private fun outputInfo(address: String, gruut: Int, outputIndex: Int, pubKeyHash : String): String {
-        return """{
-            |"address" : $address,
-            |"gruut" : $gruut,
-            |"script_code" : "76a9${pubKeyHash}88ac",
-            |"output_index" : $outputIndex
-            |}
-        """.trimMargin()
+    fun genUTXO(inputs: List<Input>, outputs: List<Output>) : String {
+        val txid = Sha256Hash.hash((Random.nextBits(256)).toString().toByteArray()).toString()
+        val utxoMessage = UTXO("utxo", txid, inputs.size, inputs, outputs.size, outputs)
+        return Json.encodeToString(utxoMessage)
     }
 }

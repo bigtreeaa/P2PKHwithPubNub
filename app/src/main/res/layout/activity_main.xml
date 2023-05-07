@@ -37,16 +37,6 @@
         app:layout_constraintTop_toBottomOf="@+id/btnGenAddress" />
 
     <Button
-        android:id="@+id/btnRetrieveMessage"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:text="@string/retrieve_message"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnGenUTXO" />
-
-    <Button
         android:id="@+id/btnGenUTXO"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -56,5 +46,25 @@
         app:layout_constraintHorizontal_bias="0.469"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btnGenCoinBase" />
+
+    <Button
+        android:id="@+id/btnUseUTXO"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="@string/use_utxo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnGenUTXO" />
+
+    <Button
+        android:id="@+id/btnRetrieveMessage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="@string/retrieve_message"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnUseUTXO" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.5.0"
 }
 
 android {
@@ -47,7 +48,10 @@ dependencies {
     // bitcoinj
     implementation 'org.bitcoinj:bitcoinj-core:0.16.2'
 
-    //PubNub Dependencies
+    // PubNub Dependencies
     implementation "com.pubnub:pubnub-kotlin:7.4.0"
     implementation "com.pubnub.components:chat-android:0.5.2"
+
+    // json serialize
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.0"
 }

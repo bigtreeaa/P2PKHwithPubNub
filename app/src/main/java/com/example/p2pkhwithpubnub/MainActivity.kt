@@ -14,7 +14,10 @@ import org.bitcoinj.core.Sha256Hash.hash
 import org.bitcoinj.core.Utils.sha256hash160
 
 import com.example.p2pkhwithpubnub.BuildConfig
+import com.fasterxml.jackson.databind.ser.Serializers
 import com.google.gson.JsonElement
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.pubnub.api.PNConfiguration
 import com.pubnub.api.PubNub
 import com.pubnub.api.UserId
@@ -25,12 +28,8 @@ import com.pubnub.api.models.consumer.PNStatus
 import com.pubnub.api.models.consumer.history.PNFetchMessageItem
 import com.pubnub.api.models.consumer.pubsub.PNMessageResult
 import com.pubnub.api.models.consumer.pubsub.PNPresenceEventResult
+import kotlinx.serialization.Serializable
 
-// data class for information of input and output
-data class InputData (var output_txid: Int, var output_index : Int, var input_index : Int)
-// pubKeyHash의 데이터 타입은 달라질 수 있음...
-// 코드 실행해보고 점검할 것
-data class OutputData (var address: String, var gruut : Int, var output_index : Int, var pubKeyHash: String)
 
 class MainActivity : AppCompatActivity() {
 
@@ -40,6 +39,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bobAddress : String
     private val aliasAlice : String = "aliceKey"
     private val aliasBob : String = "bobKey"
+    private  var aliceUtxo : MutableList<String> = mutableListOf()
+    private  var bobUtxo : MutableList<String> = mutableListOf()
 
 
     // for PubNub
@@ -62,46 +63,46 @@ class MainActivity : AppCompatActivity() {
             // Set Key spec for Alice
             val paramSpec = KeyGenParameterSpec.Builder(
                 aliasAlice,
-                KeyProperties.PURPOSE_SIGN and KeyProperties.PURPOSE_VERIFY
-            )
-                .setAlgorithmParameterSpec(ECGenParameterSpec("secp256r1"))
-                .setDigests(
+                KeyProperties.PURPOSE_SIGN or KeyProperties.PURPOSE_VERIFY
+            ).run {
+                setAlgorithmParameterSpec(ECGenParameterSpec("secp256r1"))
+                setDigests(
                     KeyProperties.DIGEST_SHA512,
                     KeyProperties.DIGEST_SHA256
                 )
-                .setUserAuthenticationRequired(false)
-                .build()
+                setUserAuthenticationRequired(false)
+                build()
+            }
+
 
             val kpg : KeyPairGenerator = KeyPairGenerator.getInstance(
                 KeyProperties.KEY_ALGORITHM_EC,
                 "AndroidKeyStore"
             )
+
             kpg.initialize(paramSpec)
 
             // Generate Key Pair for Alice
-            val publicKeyPair2 = kpg.genKeyPair()
+            val publicKeyPair = kpg.genKeyPair()
 
             // Set Key spec for Bob
             val paramSpec2 = KeyGenParameterSpec.Builder(
                 aliasBob,
-                KeyProperties.PURPOSE_SIGN and KeyProperties.PURPOSE_VERIFY
-            )
-                .setAlgorithmParameterSpec(ECGenParameterSpec("secp256r1"))
-                .setDigests(
+                KeyProperties.PURPOSE_SIGN or KeyProperties.PURPOSE_VERIFY
+            ).run {
+                setAlgorithmParameterSpec(ECGenParameterSpec("secp256r1"))
+                setDigests(
                     KeyProperties.DIGEST_SHA512,
                     KeyProperties.DIGEST_SHA256
                 )
-                .setUserAuthenticationRequired(false)
-                .build()
+                setUserAuthenticationRequired(false)
+                build()
+            }
 
-            val kpg2 : KeyPairGenerator = KeyPairGenerator.getInstance(
-                KeyProperties.KEY_ALGORITHM_EC,
-                "AndroidKeyStore"
-            )
-            kpg2.initialize(paramSpec)
+            kpg.initialize(paramSpec2)
 
             // Generate Key Pair for Bob
-            val publicKeyPair = kpg2.genKeyPair()
+            val publicKeyPair2 = kpg.genKeyPair()
         }
 
         // #########################################################################################
@@ -203,6 +204,13 @@ class MainActivity : AppCompatActivity() {
 
                 // Deliver a message to predefined variable
                 receiveMessage = pnMessageResult.message
+
+                if (aliceAddress in receiveMessage.toString()) {
+                    aliceUtxo.add(receiveMessage.asString)
+                }
+                if (bobAddress in receiveMessage.toString()) {
+                    bobUtxo.add(receiveMessage.asString)
+                }
             }
         })
 
@@ -224,8 +232,43 @@ class MainActivity : AppCompatActivity() {
         btnGenUTXO.setOnClickListener {
             // 임시적으로 utxo를 생성할 데이터는 dummy로 만들었다.
             // 추후 앱 디자인 구현 시, 해당 값들을 받아오는 구조를 만들어야 한다.
-//            val inputData : InputData = InputData()
-//            val utxoMessage = GenUTXO().genUTXO()
+            val inputData : MutableList<GenUTXO.Input> = mutableListOf()
+            val outputData : MutableList<GenUTXO.Output> = mutableListOf()
+
+            val jsonObject = JsonParser.parseString(aliceUtxo[0]).asJsonObject
+            if (jsonObject.get("type").asString == "coin_base") {
+                inputData.add(GenUTXO.Input(jsonObject.get("txid").asString, 0,0))
+                outputData.add(GenUTXO.Output(bobAddress, jsonObject.get("gruut").asInt,
+                    script = "76a9${Base58.decode(bobAddress)}88ac",0))
+            }
+
+            val utxoMessage = GenUTXO().genUTXO(inputData, outputData)
+            publishing(pubNub, utxoMessage)
+        }
+
+        // #########################################################################################
+        // button to use utxo transaction
+        // 실험 3
+        val btnUseUTXO = findViewById<Button>(R.id.btnUseUTXO)
+        btnUseUTXO.setOnClickListener {
+            val ks = KeyStore.getInstance("AndroidKeyStore")
+            ks.load(null)
+            val privateKeyEntry = ks.getEntry(aliasBob, null) as KeyStore.PrivateKeyEntry
+            val privateKey = privateKeyEntry.privateKey
+            val signature : ByteArray = Signature.getInstance("SHA256withECDSA").run {
+                initSign(privateKey)
+                update(bobUtxo[0].toByteArray())
+                sign()
+            }
+            val publicKey = ks.getCertificate(aliasBob).publicKey
+            val useUTXOMessage = UseUTXO().useUTXO(bobUtxo[0], signature, publicKey.toString())
+            publishing(pubNub, useUTXOMessage)
+//            verify code!
+//            val verifier = Signature.getInstance("SHA256withECDSA")
+//            verifier.initVerify(publicKey)
+//            verifier.update(bobUtxo[0].toByteArray())
+//            val isSignatureValid = verifier.verify(signature)
+//            Log.v("verify", isSignatureValid.toString())
         }
 
         // button to send message through PubNub
@@ -252,8 +295,8 @@ class MainActivity : AppCompatActivity() {
         }
         val keyEntry = ks.getEntry(alias, null) as KeyStore.PrivateKeyEntry
         val cert : Certificate = keyEntry.certificate
-        val publicKey : ByteArray = cert.publicKey.encoded
-        val address = Base58.encode(sha256hash160(hash(publicKey)))
+//        val publicKey : ByteArray = cert.publicKey.encoded
+        val address = Base58.encode(sha256hash160(hash(cert.encoded)))
         Log.v("Address", address)
         return address
     }
@@ -314,29 +357,6 @@ class MainActivity : AppCompatActivity() {
 //
 //
 //    // deliver input information
-//    fun inputInfo(output_txid : Int, output_index : Int, input_index : Int) : String{
-//        return """"{
-//            |output_txid" : $output_txid,
-//            |"output_index" : $output_index,
-//            |"input_index" : $input_index
-//            |},
-//        """.trimMargin()
-//    }
-//
-//    // deliver output information
-//    fun outputInfo(address : String, gruut :Int, output_index: Int) : String{
-//        val pubKeyHash = genPubKeyHash(alias, keyStore)
-//        val signature = genSign(address, alias)
-//        return """{
-//            |"address" : $address,
-//            |"gruut" : $gruut,
-//            |"signature" : $signature
-//            |"public_key" : $
-//            |"script_code" : "76a914${pubKeyHash}88ac",
-//            |"ouput_index" : $output_index
-//            |}
-//        """.trimMargin()
-//    }
 //
 //    fun genPubKeyHash(alias : String, keyStore: KeyStore) : String {
 //        // get information of certain key pair
@@ -357,43 +377,6 @@ class MainActivity : AppCompatActivity() {
 //        }
 //
 //        return signature
-//    }
-//
-//    fun genTranx(input_data : List<InputData>, output_data : List<OutputData>, cert: Certificate) : String {
-//        var message : String = """{"unspent_output" : [
-//            |{
-//            |   "input_number" : $input_data.size,
-//            |   "inputs" : [
-//            |   """.trimMargin()
-//        for (info in input_data){
-//            message += inputInfo(info.output_txid, info.input_index, info.input_index)
-//            message += """,
-//                |
-//            """.trimMargin()
-//        }
-//        message.replace(".$".toRegex(), "")
-//
-//        message += """
-//            |],
-//            |"output_number : $output_data.size,
-//            |"outputs" : [
-//            |
-//        """.trimMargin()
-//
-//        for (info in output_data){
-//            message += outputInfo(info.address, info.gruut, info.output_index)
-//            message += """,
-//                |
-//            """.trimMargin()
-//        }
-//        message.replace(".$".toRegex(), "")
-//
-//        message += """
-//            |]
-//            |
-//        """.trimMargin()
-//
-//        return message
 //    }
 //
 //    fun genBlock(size : Int, version : Int, previousBlockHash : ByteArray, dataList: MutableList<ByteArray>) : String {

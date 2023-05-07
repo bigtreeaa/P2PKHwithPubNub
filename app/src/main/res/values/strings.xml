@@ -4,5 +4,6 @@
     <string name="gen_address">Generate Address</string>
     <string name="gen_coin_base">Generate Coin Base</string>
     <string name="gen_utxo">Generate UTXO</string>
+    <string name="use_utxo">Use UTXO</string>
     <string name="retrieve_message">Retrieve Message</string>
 </resources>
